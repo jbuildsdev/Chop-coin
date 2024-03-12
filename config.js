@@ -12,3 +12,5 @@ export const ARKHIA_API_KEY = process.env.ARKHIA_API_KEY;
 export const TOKEN_ID = process.env.TOKEN_ID;
 export const DECIMAL_PRECISION = process.env.DECIMAL_PRECISION;
 export const MIN_BALANCE = process.env.MIN_BALANCE;
+export const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
+export const SUPABASE_URL = process.env.SUPABASE_URL;
