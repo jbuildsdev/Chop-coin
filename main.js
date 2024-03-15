@@ -19,6 +19,7 @@ var requestOptions = {
   method: "GET",
   headers: myHeaders,
   redirect: "follow",
+  timeout: 100000,
 };
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
@@ -50,14 +51,14 @@ async function storeBalances(balances) {
   }
 }
 
-fetchAllBalances(
-  `https://pool.arkhia.io/hedera/mainnet/api/v1/tokens/${TOKEN_ID}/balances?account.balance=gt:${balance}`,
-  requestOptions
-)
-  .then((results) => {
-    storeBalances(results);
-  })
-  .catch((error) => console.log("error", error));
+// fetchAllBalances(
+//   `https://pool.arkhia.io/hedera/mainnet/api/v1/tokens/${TOKEN_ID}/balances?account.balance=gt:${balance}`,
+//   requestOptions
+// )
+//   .then((results) => {
+//     storeBalances(results);
+//   })
+//   .catch((error) => console.log("error", error));
 
 //console log balances
 /*
@@ -76,3 +77,52 @@ fetchAllBalances(
   })
   .catch((error) => console.log("error", error));
   */
+
+async function fetchAndLogBalances() {
+  const { data: balances, error } = await supabase.from("balances").select("*");
+
+  if (error) {
+    console.error("Error fetching balances:", error);
+    return;
+  }
+
+  for (const balance of balances) {
+    console.log(`Account: ${balance.account}, Balance: ${balance.balance}`);
+  }
+}
+async function fetchAndCompareBalances() {
+  // Fetch old balances from Supabase
+  const { data: oldBalances, error: oldBalancesError } = await supabase
+    .from("balances")
+    .select("*");
+
+  if (oldBalancesError) {
+    console.error("Error fetching old balances:", oldBalancesError);
+    return;
+  }
+
+  // Fetch new balances from API
+  const newBalances = await fetchAllBalances(
+    `https://pool.arkhia.io/hedera/mainnet/api/v1/tokens/${TOKEN_ID}/balances?account.balance=gt:${balance}`,
+    requestOptions
+  );
+
+  // Compare balances and log account IDs with increased balance
+  for (const newBalance of newBalances) {
+    const oldBalance = oldBalances.find(
+      (balance) => balance.account === newBalance.account
+    );
+
+    if (oldBalance) {
+      const balanceChange =
+        (newBalance.balance - oldBalance.balance) / DECIMAL_PRECISION;
+      if (balanceChange >= 1) {
+        console.log(
+          `Account: ${newBalance.account}, Balance increased by: ${balanceChange}`
+        );
+      }
+    }
+  }
+}
+
+fetchAndCompareBalances();
